@@ -1,2 +1,3 @@
-# get-price-selenium
+# Get price
+
 A selenium price scraper.
