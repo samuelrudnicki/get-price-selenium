@@ -9,7 +9,7 @@ FILTERS = {
     'min': MIN_PRICE,
     'max': MAX_PRICE
 } 
-BASE_URL = "https://www.mercadolivre.com.br/"
+BASE_URL = "https://mercadolivre.com.br/"
 
 def get_chrome_web_driver(options):
     return webdriver.Chrome('./chromedriver', chrome_options=options)
