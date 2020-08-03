@@ -3,8 +3,8 @@ from selenium import webdriver
 FOLDER = 'reports'
 NAME = 'arroz'
 CURRENCY = 'R$'
-MAX_PRICE = '20'
-MIN_PRICE = '10'
+MAX_PRICE = '25'
+MIN_PRICE = '20'
 FILTERS = {
     'min': MIN_PRICE,
     'max': MAX_PRICE

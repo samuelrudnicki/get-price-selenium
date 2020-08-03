@@ -15,6 +15,40 @@ from scrap_config import (
     BASE_URL,
     FOLDER
 )
+class GenerateJSONReport:
+    def __init__(self, product_name, filters, base_url, currency, folder, data):
+        self.product_name = product_name
+        self.filters = filters
+        self.base_url = base_url
+        self.currency = currency
+        self.data = data
+        self.folder = folder
+        report = {
+            'title': self.product_name,
+            'date': self.get_now(),
+            'cheapest_item': self.get_cheapest_item(),
+            'currency': self.currency,
+            'filters': self.filters,
+            'base_url': self.base_url,
+            'products': self.data
+        }
+        print("[*] CREATING REPORT [*]")
+        with open(f'{self.folder}/{self.product_name}.json', 'w') as f:
+            json.dump(report, f)
+        print("Done...")
+
+    @staticmethod
+    def get_now():
+        now = datetime.now()
+        return now.strftime("%d/%m/%Y %H:%M:%S")
+
+    def get_cheapest_item(self):
+        try:
+            return sorted(self.data, key=lambda k: k['price'])[0]
+        except Exception as e:
+            print(e)
+            print("Problem with sorting items")
+            return None
 
 class MercadoLivreAPI:
     def __init__(self, product_name, filters, base_url, currency):
@@ -34,10 +68,53 @@ class MercadoLivreAPI:
         print(f"[*] Looking for {self.product_name}... [*]")
         links = self.get_products_links()
         time.sleep(2)
-
+        print(f"[*] Got {len(links)} links to products [*]")
+        products = self.get_products_info(links)
+        print(f"[*] Got info  about {len(products)} products [*]")
         self.driver.quit()
-        pass
+        return products
     
+    def get_products_info(self,link_list):
+        try:
+            products_info = [self.get_product_info(product_link) for product_link in link_list]
+            return products_info        
+        except Exception as e:
+            print("[!] Error getting products info [!]")
+            print(e)
+            return None
+
+    def get_product_info(self, product_link):
+        self.driver.get(product_link)
+        time.sleep(2)
+        title = self.get_title()
+        price = self.get_price()
+        seller = self.get_seller()
+        if title and seller and price:
+            product_info = {
+                'id': self.get_id(product_link),
+                'title': title,
+                'price': price,
+                'seller': seller
+            }
+            return product_info
+        return None
+
+    def get_id(self, link):
+        return link.split('-')[1]
+
+    def get_seller(self):
+        seller = self.driver.find_element_by_id("seller-view-more-link").get_attribute('href')
+        return seller
+
+
+    def get_price(self):
+        price = self.driver.find_element_by_xpath("//form[@id='productInfo']/fieldset/span/span[@class='price-tag-symbol']").get_attribute('content')
+        return float(price)
+
+    def get_title(self):
+        title = self.driver.find_element_by_class_name("item-title__primary").text
+        return title
+
     def get_products_links(self):
         self.driver.get(self.base_url)
         element = self.driver.find_element_by_xpath("//input[contains(@class, 'nav-search-input')]")
@@ -54,7 +131,6 @@ class MercadoLivreAPI:
             results = result_list.find_elements_by_xpath("//li/div")
             products_id = [products_id.get_attribute('id') for products_id in results]
             links_list = self.get_links(products_id)
-            print(links_list)
             return links_list
  
         except Exception as e:
@@ -83,5 +159,6 @@ class MercadoLivreAPI:
 if __name__ == '__main__':
     ml = MercadoLivreAPI(NAME, FILTERS, BASE_URL, CURRENCY)
     data = ml.run()
+    GenerateJSONReport(NAME,FILTERS, BASE_URL, CURRENCY, FOLDER, data)
 
 
